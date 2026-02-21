@@ -1,196 +1,196 @@
-import { useEffect, useState } from "react";
+
+import { useState, useEffect } from "react";
 
 export default function App() {
-  const [show, setShow] = useState(false);
-  const [surpriseVisible, setSurpriseVisible] = useState(false);
-  const [confetti, setConfetti] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
+  const [groupName, setGroupName] = useState("");
+  const [members, setMembers] = useState([]);
+  const [memberName, setMemberName] = useState("");
+  const [expenses, setExpenses] = useState([]);
+  const [expenseTitle, setExpenseTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [paidBy, setPaidBy] = useState("");
 
   useEffect(() => {
-    setTimeout(() => setShow(true), 1200);
-    
-    // Inject styles when component mounts
-    const styleSheet = document.createElement("style");
-    styleSheet.type = "text/css";
-    styleSheet.id = "custom-animations";
-    styleSheet.innerHTML = `
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      
-      @keyframes fadeInDown {
-        from {
-          opacity: 0;
-          transform: translateY(-20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      
-      @keyframes confetti {
-        0% {
-          transform: translateY(0) rotate(0deg);
-          opacity: 1;
-        }
-        100% {
-          transform: translateY(100vh) rotate(720deg);
-          opacity: 0;
-        }
-      }
-      
-      @keyframes wiggle {
-        0%, 100% { transform: rotate(-3deg); }
-        50% { transform: rotate(3deg); }
-      }
-      
-      @keyframes spinSlow {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      
-      .animate-fade-in-up {
-        animation: fadeInUp 1s ease-out forwards;
-      }
-      
-      .animate-fade-in-down {
-        animation: fadeInDown 1s ease-out 0.5s forwards;
-      }
-      
-      .animate-confetti {
-        animation: confetti 3s linear forwards;
-      }
-      
-      .animate-wiggle {
-        animation: wiggle 0.5s ease-in-out infinite;
-      }
-      
-      .animate-spin-slow {
-        animation: spinSlow 6s linear infinite;
-      }
-    `;
-    document.head.appendChild(styleSheet);
-    
-    // Cleanup function to remove styles when component unmounts
-    return () => {
-      const existingStyle = document.getElementById("custom-animations");
-      if (existingStyle) {
-        document.head.removeChild(existingStyle);
-      }
-    };
+    const data = JSON.parse(localStorage.getItem("expense_app"));
+    if (data) {
+      setGroupName(data.groupName || "");
+      setMembers(data.members || []);
+      setExpenses(data.expenses || []);
+    }
   }, []);
 
-  const handleSurpriseClick = () => {
-    setSurpriseVisible(!surpriseVisible);
-    setClickCount(prev => prev + 1);
-    
-    // Trigger confetti effect
-    setConfetti(true);
-    setTimeout(() => setConfetti(false), 3000);
+  useEffect(() => {
+    localStorage.setItem(
+      "expense_app",
+      JSON.stringify({ groupName, members, expenses })
+    );
+  }, [groupName, members, expenses]);
+
+  const addMember = () => {
+    if (!memberName || members.includes(memberName)) return;
+    setMembers([...members, memberName]);
+    setMemberName("");
   };
 
+  const addExpense = () => {
+    if (!expenseTitle || !amount || !paidBy) return;
+    const perPerson = amount / members.length;
+
+    setExpenses([
+      ...expenses,
+      { expenseTitle, amount: Number(amount), paidBy, perPerson },
+    ]);
+
+    setExpenseTitle("");
+    setAmount("");
+    setPaidBy("");
+  };
+
+  const calculateBalances = () => {
+    const balance = {};
+    members.forEach((m) => (balance[m] = 0));
+
+    expenses.forEach((e) => {
+      members.forEach((m) => {
+        if (m === e.paidBy) {
+          balance[m] += e.amount - e.perPerson;
+        } else {
+          balance[m] -= e.perPerson;
+        }
+      });
+    });
+
+    return balance;
+  };
+
+  const balances = calculateBalances();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-500 via-red-500 to-purple-600 text-white overflow-hidden">
-      {/* Confetti effect */}
-      {confetti && (
-        <div className="fixed inset-0 pointer-events-none z-10">
-          {[...Array(50)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 rounded-full animate-confetti"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `-10%`,
-                backgroundColor: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${Math.random() * 3 + 2}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
-      
-      <div className="text-center p-6 max-w-2xl bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl relative z-20 transform transition-all duration-500 hover:scale-105">
-        {/* Surprise icon */}
-        <div 
-          className="absolute -top-10 left-1/2 transform -translate-x-1/2 cursor-pointer animate-bounce"
-          onClick={handleSurpriseClick}
-          title="Click for a surprise!"
-        >
-          <div className="w-16 h-16 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg transform transition-transform hover:scale-110 hover:rotate-12">
-            <span className="text-3xl">🎁</span>
-          </div>
-        </div>
-        
-        <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-pulse">
-          🎉 Happy New Year 2026! 🎉
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-6 flex items-center justify-center">
+      <div className="backdrop-blur-lg bg-white/20 border border-white/30 shadow-2xl rounded-3xl p-8 w-full max-w-3xl text-white">
+        <h1 className="text-4xl font-bold text-center mb-8 tracking-wide">
+          💰 Smart Expense Splitter
         </h1>
 
-        <h2 className="text-2xl md:text-4xl font-semibold mb-6 animate-fade-in-up">
-          Dear Vanshika Chauhan 💖
-        </h2>
+        <input
+          className="w-full p-3 mb-6 rounded-full bg-white/30 placeholder-white text-white focus:outline-none focus:ring-2 focus:ring-pink-300 transition"
+          placeholder="Enter Group Name"
+          value={groupName}
+          onChange={(e) => setGroupName(e.target.value)}
+        />
 
-        {show && (
-          <div className="space-y-4">
-            <p className="text-lg md:text-xl leading-relaxed animate-fade-in">
-              As this new year begins, I just want you to know how special you are
-              to me. 💕  
-              <br /><br />
-              Thank you for being my happiness, my smile, and my strength.  
-              May this year bring us more love, laughter, and beautiful memories together. 🌸
-              <br /><br />
-              I’m grateful for you today and always. 💫
-            </p>
-            
-            {/* Surprise content */}
-            {surpriseVisible && (
-              <div className="mt-6 p-4 bg-white/20 rounded-xl animate-fade-in-up border border-white/30 transform transition-all duration-700">
-                <h3 className="text-xl font-bold mb-2 text-yellow-300 animate-pulse">
-                  Special Message #{clickCount}! 🎊
-                </h3>
-                <p className="text-lg">
-                  Every time you click the gift, it multiplies the love I have for you! 💖
-                  You've clicked {clickCount} times - that's how many reasons I love you! 😍
-                </p>
-                <div className="mt-3 text-2xl animate-wiggle">
-                  🌟✨💫✨🌟
-                </div>
-              </div>
-            )}
+        <div className="mb-6">
+          <h2 className="font-semibold mb-3 text-lg">👥 Members</h2>
+          <div className="flex gap-3">
+            <input
+              className="flex-1 p-3 rounded-full bg-white/30 placeholder-white text-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+              placeholder="Member name"
+              value={memberName}
+              onChange={(e) => setMemberName(e.target.value)}
+            />
+            <button
+              onClick={addMember}
+              className="bg-pink-500 hover:bg-pink-600 px-6 rounded-full transition duration-300 shadow-lg"
+            >
+              Add
+            </button>
+          </div>
+
+          <div className="flex gap-3 mt-4 flex-wrap">
+            {members.map((m, i) => (
+              <span
+                key={i}
+                className="bg-white/30 px-4 py-1 rounded-full backdrop-blur-md"
+              >
+                {m}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {members.length > 0 && (
+          <div className="mb-8">
+            <h2 className="font-semibold mb-3 text-lg">🧾 Add Expense</h2>
+
+            <input
+              className="w-full p-3 rounded-full bg-white/30 mb-3 placeholder-white text-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+              placeholder="Expense title"
+              value={expenseTitle}
+              onChange={(e) => setExpenseTitle(e.target.value)}
+            />
+
+            <input
+              type="number"
+              className="w-full p-3 rounded-full bg-white/30 mb-3 placeholder-white text-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+              placeholder="Amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+
+            <select
+              className="w-full p-3 rounded-full bg-white/30 mb-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+              value={paidBy}
+              onChange={(e) => setPaidBy(e.target.value)}
+            >
+              <option value="" className="text-black">Paid By</option>
+              {members.map((m, i) => (
+                <option key={i} value={m} className="text-black">
+                  {m}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={addExpense}
+              className="w-full bg-green-400 hover:bg-green-500 py-3 rounded-full transition duration-300 shadow-lg text-black font-semibold"
+            >
+              ➕ Add Expense
+            </button>
           </div>
         )}
 
-        <div className="mt-8 text-4xl animate-bounce">
-          ❤️ 💖 💕 💙 💛
-        </div>
+        {expenses.length > 0 && (
+          <div className="mb-8">
+            <h2 className="font-semibold mb-3 text-lg">📋 Expenses</h2>
+            {expenses.map((e, i) => (
+              <div
+                key={i}
+                className="bg-white/20 p-3 rounded-xl mb-3 flex justify-between items-center backdrop-blur-md"
+              >
+                <span>
+                  {e.expenseTitle} (₹{e.amount})
+                </span>
+                <span className="text-sm opacity-80">
+                  Paid by {e.paidBy}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
-        <div className="mt-6 flex justify-center space-x-4">
-          <div className="animate-spin-slow text-2xl">🎊</div>
-          <div className="animate-pulse text-2xl">🎈</div>
-          <div className="animate-bounce text-2xl">🎇</div>
-        </div>
-
-        <p className="mt-6 text-sm opacity-80 animate-fade-in-down">
-          — With Love, Siddharth 💌
-        </p>
-      </div>
-      
-      {/* Additional background decorations */}
-      <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-1/4 left-1/4 w-16 h-16 rounded-full bg-pink-400/20 animate-ping"></div>
-        <div className="absolute bottom-1/3 right-1/3 w-20 h-20 rounded-full bg-blue-400/20 animate-ping" style={{animationDelay: "1s"}}></div>
-        <div className="absolute top-1/3 right-1/4 w-12 h-12 rounded-full bg-yellow-400/20 animate-ping" style={{animationDelay: "2s"}}></div>
+        {members.length > 0 && (
+          <div>
+            <h2 className="font-semibold mb-3 text-lg">📊 Balance Summary</h2>
+            {Object.keys(balances).map((m, i) => (
+              <div
+                key={i}
+                className="flex justify-between py-2 border-b border-white/30"
+              >
+                <span>{m}</span>
+                <span
+                  className={
+                    balances[m] >= 0
+                      ? "text-green-300 font-semibold"
+                      : "text-red-300 font-semibold"
+                  }
+                >
+                  ₹{balances[m].toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-

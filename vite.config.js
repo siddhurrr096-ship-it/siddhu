@@ -4,13 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "./"
+  base: "/my-react-app/",
+  css: {
+    postcss: './postcss.config.js',
+  }
 })
-
-// import { defineConfig } from "vite";
-// import react from "@vitejs/plugin-react";
-
-// export default defineConfig({
-//   plugins: [react()],
-//   base: "/new/", // 👈 EXACT repo name
-// });
