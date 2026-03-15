@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://siddharth408.github.io/my-react-app",
+  "homepage": "https://siddharth408.github.io/smart",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
