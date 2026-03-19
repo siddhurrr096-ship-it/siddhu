@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 
 export default function App() {
-  const [groupName, setGroupName] = useState("");
-  const [members, setMembers] = useState([]);
+  const [groupName, setGroupName] = useState("Test Group");
+  const [members, setMembers] = useState(["Alice", "Bob"]);
   const [memberName, setMemberName] = useState("");
   const [expenses, setExpenses] = useState([]);
   const [expenseTitle, setExpenseTitle] = useState("");
@@ -11,11 +10,15 @@ export default function App() {
   const [paidBy, setPaidBy] = useState("");
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("expense_app"));
-    if (data) {
-      setGroupName(data.groupName || "");
-      setMembers(data.members || []);
-      setExpenses(data.expenses || []);
+    try {
+      const data = JSON.parse(localStorage.getItem("expense_app"));
+      if (data) {
+        setGroupName(data.groupName || "");
+        setMembers(data.members || []);
+        setExpenses(data.expenses || []);
+      }
+    } catch (err) {
+      console.error("Error loading data:", err);
     }
   }, []);
 
